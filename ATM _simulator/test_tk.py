@@ -2,11 +2,12 @@
 from tkinter import*
 
 import pyodbc
+global username_db
 # DATABASE##
 db =pyodbc.connect(r'Driver={Microsoft Access Driver (*.mdb)};DBQ=C:\Users\User\Documents\atmData.mdb')
 cur=db.cursor()
 cur.execute("SELECT username,Balance,Pass FROM atmdata1")
-data=cur.fetchone()
+data=cur.fetchall()
 print(data)
 def updatetable(balance,Name):
     try:
@@ -54,14 +55,16 @@ class changepinFrame(Frame):
         self.submitButton.grid(columnspan=4)
         self.pack()
     def changepin(self):
-        oldpin=data[2]
+        cur.execute("SELECT pass FROM atmdata1  WHERE username=?", (self.data[0]))
+        balancedata = cur.fetchone()
+        oldpin=balancedata[0]
         oldpinentry = self.oldpinentry.get()
         if (oldpin==oldpinentry):
             print("changepin")
             newpinentry = self.newpinEntry.get()
             newpinconfentry = self.newpinconfEntry.get()
             if (newpinentry==newpinconfentry):
-                updatepin(newpinentry,data[0])
+                updatepin(newpinentry,self.data[0])
             else:
                 print("password not match")
         else:
@@ -83,9 +86,9 @@ class DepositFrame(Frame):
         
     def deposit(self):
         depositvalue= self.depositentry.get()
-        w_balnce = getbalance(data[0])
+        w_balnce = getbalance(self.data[0])
         balance=int(w_balnce[0])+int(depositvalue)
-        updatetable(balance,data[0])
+        updatetable(balance,self.data[0])
         self.master.destroy()
         # root2.deiconify()   #makes the root window visible again
 
@@ -102,19 +105,19 @@ class WithdrawFrame(Frame):
         self.WithdrawButton.grid(row=2, columnspan=6, sticky=W)
         self.pack()
     def withdraw1000(self):
-        w_balnce=getbalance(data[0])
+        w_balnce=getbalance(self.data[0])
         balance=int(w_balnce[0])-1000
-        updatetable(balance,data[0])
+        updatetable(balance,self.data[0])
         self.master.destroy()
     def withdraw500(self):
-        w_balnce = getbalance(data[0])
+        w_balnce = getbalance(self.data[0])
         balance=int(w_balnce[0])-500
-        updatetable(balance,data[0])
+        updatetable(balance,self.data[0])
         self.master.destroy()
     def withdraw100(self):
-        w_balnce = getbalance(data[0])
+        w_balnce = getbalance(self.data[0])
         balance=int(w_balnce[0])-100
-        updatetable(balance,data[0])
+        updatetable(balance,self.data[0])
         self.master.destroy()
         
         
@@ -122,7 +125,7 @@ class AccountFrame(Frame):
     def __init__(self, master,data):
         super().__init__(master)
         self.data=data
-        self.mainLabel=Label(self,text="WelcomeUser ", bg="yellow", fg="black", width=26,height=5,font="ariel,14,bold"+self.data[0])
+        self.mainLabel=Label(self,text="Welcome ", bg="yellow", fg="black", width=26,height=5,font="ariel,14,bold"+self.data[0])
         self.mainLabel.grid(columnspan=2, padx=5, pady=5,sticky="e")
         self.Viewbalancebtn = Button(self, text="Viewbalance", command=self.viewbalance,fg="blue",bg="pink", width=25,height=5, font="italian,10,bold")
         self.Viewbalancebtn.grid(columnspan=4,sticky="e")
@@ -134,21 +137,22 @@ class AccountFrame(Frame):
         self.changepinbtn.grid(columnspan=8, sticky="e")
         self.pack()
     def viewbalance(self):
-        w_balnce = getbalance(data[0])
+        w_balnce = getbalance(self.data[0])
+        print(w_balnce,self.data[0])
         BLLabel=Label(self,text="available balance"+w_balnce[0])
         BLLabel.grid(columnspan=10,)
         BLLabel.after(1000, lambda: BLLabel.destroy())
 
     def Withdraw(self):
         root1=Tk()
-        WithdrawFrame(root1,data)
+        WithdrawFrame(root1,self.data)
     
     def deposit(self):
         root2=Tk()
-        DepositFrame(root2,data)
+        DepositFrame(root2,self.data)
     def changepin(self):
         root3=Tk()
-        changepinFrame(root3, data)
+        changepinFrame(root3, self.data)
 
 
 def show(uservalue, userpass):
@@ -161,6 +165,7 @@ def show(uservalue, userpass):
             ##              print(myresult[i])
             if (uservalue in myresult[i][0] and userpass in myresult[i][1]):
                 print("login sucess")
+                username_db=uservalue
                 rootacc = Tk()
                 rootacc.geometry('500x600')
                 rootacc.title('MY ATM')
